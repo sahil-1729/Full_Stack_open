@@ -1,0 +1,40 @@
+//Contains only the connection to port part
+const express = require('express')
+const app = express()
+const cors = require('cors')
+const {MONGODB_URI} = require('./utils/config')
+const mongoose = require('mongoose')
+require('express-async-errors')
+const logger = require('./utils/logger')
+const {errorHandler,unknown, userExtract, getToken} = require('./utils/middleware')
+const middleware = require('./utils/middleware')
+const loginRouter = require('./controllers/login')
+const userRouter = require('./controllers/paths(User)')
+const blogRouter = require('./controllers/paths(Blog)')
+
+// app.use(middleware.getToken)
+var morgan = require('morgan')
+app.use(morgan('dev'))
+mongoose.set('strictQuery', false)
+mongoose.connect(MONGODB_URI)
+.then(response=>{
+    logger.info(`connected hai`)
+    logger.info(MONGODB_URI)
+})
+    .catch(error=>logger.error(error))
+app.use(cors())
+app.use(express.json())
+app.use(morgan('dev'))
+app.use('/api/users',userRouter)
+app.use(getToken)
+// app.use('/api/blogs',userExtract,blogRouter)
+app.use('/api/blogs',blogRouter)
+app.use('/api/login',loginRouter)
+if(process.env.NODE_ENV === 'test'){
+    const testing = require('./controllers/testing')
+    app.use('/api/testing',testing)
+}
+app.use(unknown)
+app.use(errorHandler)
+
+module.exports = app
